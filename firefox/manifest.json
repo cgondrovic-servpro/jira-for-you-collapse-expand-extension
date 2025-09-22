@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Jira For You Swimlane Collapse / Expand",
+  "version": "1.0.0",
+  "description": "Collapse and expand sections on Jira for-you page based on swimlane statuses",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "jira-swimlane-collapser@example.com",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.atlassian.net/*",
+    "*://*.jira.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.atlassian.net/jira/for-you*", "*://*.jira.com/jira/for-you*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ]
+}

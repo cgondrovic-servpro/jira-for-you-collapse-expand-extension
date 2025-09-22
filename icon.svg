@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0052CC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0065FF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="url(#grad)" stroke="#003d99" stroke-width="2"/>
+
+  <!-- Main container representing Jira sections -->
+  <rect x="20" y="25" width="88" height="12" rx="2" fill="white" opacity="0.9"/>
+  <rect x="20" y="42" width="88" height="8" rx="1" fill="white" opacity="0.7"/>
+  <rect x="20" y="54" width="88" height="8" rx="1" fill="white" opacity="0.7"/>
+
+  <!-- Collapsed section indicator -->
+  <rect x="20" y="70" width="88" height="12" rx="2" fill="white" opacity="0.9"/>
+  <polygon points="26,76 32,73 32,79" fill="#0052CC"/>
+
+  <!-- Another section -->
+  <rect x="20" y="87" width="88" height="12" rx="2" fill="white" opacity="0.9"/>
+  <rect x="20" y="104" width="88" height="6" rx="1" fill="white" opacity="0.7"/>
+
+  <!-- Collapse/expand symbol overlay -->
+  <circle cx="90" cy="90" r="18" fill="white" stroke="#0052CC" stroke-width="2"/>
+  <text x="90" y="96" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0052CC">⇕</text>
+</svg>

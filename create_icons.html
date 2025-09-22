@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas16" width="16" height="16" style="border: 1px solid black; margin: 5px;"></canvas>
+    <canvas id="canvas48" width="48" height="48" style="border: 1px solid black; margin: 5px;"></canvas>
+    <canvas id="canvas128" width="128" height="128" style="border: 1px solid black; margin: 5px;"></canvas>
+
+    <div>
+        <button onclick="downloadIcons()">Download Icons</button>
+    </div>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#0052CC');
+            gradient.addColorStop(1, '#0065FF');
+
+            // Draw background circle
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2 - 2, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw border
+            ctx.strokeStyle = '#003d99';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Calculate proportional sizes
+            const rectWidth = size * 0.7;
+            const rectHeight = size * 0.08;
+            const startX = (size - rectWidth) / 2;
+            const spacing = size * 0.12;
+
+            // Draw sections
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+
+            // First section (expanded)
+            ctx.fillRect(startX, size * 0.2, rectWidth, rectHeight);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(startX, size * 0.2 + spacing * 0.8, rectWidth, rectHeight * 0.7);
+            ctx.fillRect(startX, size * 0.2 + spacing * 1.4, rectWidth, rectHeight * 0.7);
+
+            // Second section (collapsed with arrow)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(startX, size * 0.55, rectWidth, rectHeight);
+
+            // Draw collapse arrow
+            ctx.fillStyle = '#0052CC';
+            ctx.beginPath();
+            const arrowSize = size * 0.04;
+            const arrowX = startX + arrowSize;
+            const arrowY = size * 0.55 + rectHeight/2;
+            ctx.moveTo(arrowX, arrowY - arrowSize);
+            ctx.lineTo(arrowX + arrowSize, arrowY);
+            ctx.lineTo(arrowX, arrowY + arrowSize);
+            ctx.fill();
+
+            // Third section
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(startX, size * 0.75, rectWidth, rectHeight);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(startX, size * 0.75 + spacing * 0.6, rectWidth, rectHeight * 0.5);
+        }
+
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function downloadIcons() {
+            downloadCanvas(document.getElementById('canvas16'), 'icon16.png');
+            downloadCanvas(document.getElementById('canvas48'), 'icon48.png');
+            downloadCanvas(document.getElementById('canvas128'), 'icon128.png');
+        }
+
+        // Draw icons when page loads
+        window.onload = function() {
+            drawIcon(document.getElementById('canvas16'), 16);
+            drawIcon(document.getElementById('canvas48'), 48);
+            drawIcon(document.getElementById('canvas128'), 128);
+        };
+    </script>
+</body>
+</html>
