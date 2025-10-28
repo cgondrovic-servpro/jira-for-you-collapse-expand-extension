@@ -98,3 +98,11 @@
 .jira-collapsed h3 {
   opacity: 0.6;
 }
+
+/* Override Jira's webkit-box display that truncates content */
+[data-testid*="global-pages.home"] ._1e0ccj1k {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+}

@@ -1,0 +1,23 @@
+{
+  "manifest_version": 2,
+  "name": "Jira For You Swimlane Collapse / Expand",
+  "version": "1.0.0",
+  "description": "Collapse and expand sections on Jira for-you page based on swimlane statuses",
+  "permissions": [
+    "*://*.atlassian.net/*",
+    "*://*.jira.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.atlassian.net/jira/for-you*", "*://*.jira.com/jira/for-you*", "*://jira-servpro.atlassian.net/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDE2IDE2Ij48Y2lyY2xlIGN4PSI4IiBjeT0iOCIgcj0iNyIgZmlsbD0iIzAwNTJDQyIgc3Ryb2tlPSIjMDAzZDk5Ii8+PHJlY3QgeD0iNCIgeT0iNSIgd2lkdGg9IjgiIGhlaWdodD0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuOSIvPjxyZWN0IHg9IjQiIHk9IjgiIHdpZHRoPSI4IiBoZWlnaHQ9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjkiLz48cG9seWdvbiBwb2ludHM9IjQsMTEgNiw5LjUgNiwxMi41IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==",
+    "32": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNCIgZmlsbD0iIzAwNTJDQyIgc3Ryb2tlPSIjMDAzZDk5Ii8+PHJlY3QgeD0iOCIgeT0iMTAiIHdpZHRoPSIxNiIgaGVpZ2h0PSIyIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45Ii8+PHJlY3QgeD0iOCIgeT0iMTQiIHdpZHRoPSIxNiIgaGVpZ2h0PSIyIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45Ii8+PHBvbHlnb24gcG9pbnRzPSI4LDIwIDEyLDE4IDEyLDIyIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==",
+    "64": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMCIgZmlsbD0iIzAwNTJDQyIgc3Ryb2tlPSIjMDAzZDk5IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSIxMiIgeT0iMTgiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45Ii8+PHJlY3QgeD0iMTIiIHk9IjI2IiB3aWR0aD0iNDAiIGhlaWdodD0iMyIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuNyIvPjxyZWN0IHg9IjEyIiB5PSIzMyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjMiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjciLz48cmVjdCB4PSIxMiIgeT0iNDAiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45Ii8+PHBvbHlnb24gcG9pbnRzPSIxNiw0MyAyMiw0MCAyMiw0NiIgZmlsbD0iIzAwNTJDQyIvPjwvc3ZnPg=="
+  }
+}
