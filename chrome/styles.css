@@ -1,9 +1,8 @@
 .jira-collapse-control {
   margin: 8px 0 4px 0;
-  z-index: 1000;
-  position: relative;
   display: flex;
   align-items: center;
+  pointer-events: none;
 }
 
 .jira-collapse-button {
@@ -22,6 +21,7 @@
   font-weight: 500;
   line-height: 1;
   min-height: 24px;
+  pointer-events: auto;
 }
 
 .jira-collapse-button:hover {
