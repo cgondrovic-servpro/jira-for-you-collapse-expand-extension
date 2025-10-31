@@ -57,8 +57,9 @@ class JiraSwimlaneCollapser {
 
   async loadState() {
     try {
-      const result = await chrome.storage.local.get(['collapsedSections']);
-      this.collapsedSections = new Set(result.collapsedSections || []);
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
     } catch (error) {
       // Silently fail
     }
@@ -66,9 +67,330 @@ class JiraSwimlaneCollapser {
 
   async saveState() {
     try {
-      await chrome.storage.local.set({
-        collapsedSections: Array.from(this.collapsedSections)
-      });
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
+    } catch (error) {
+      // Silently fail
+    }
+  }
+  async loadState() {
+    try {
+      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
+      const stored = localStorage.getItem('jira-collapsed-sections');
+      this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      // Silently fail
+    }
+  }
+
+  async saveState() {
+    try {
+      localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
     } catch (error) {
       // Silently fail
     }

@@ -1,6 +1,7 @@
 class JiraSwimlaneCollapser {
   constructor() {
     this.collapsedSections = new Set();
+    this.priorityCache = new Map(); // Cache for priority data
     this.init();
   }
 
@@ -10,13 +11,57 @@ class JiraSwimlaneCollapser {
     setTimeout(() => this.processSwimlanes(), 500);
   }
 
+  async fetchIssuePriority(issueKey) {
+    // Check cache first
+    if (this.priorityCache.has(issueKey)) {
+      return this.priorityCache.get(issueKey);
+    }
+
+    try {
+      const response = await fetch(`/rest/api/3/issue/${issueKey}?fields=priority`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const priorityData = {
+        name: data.fields.priority?.name?.toLowerCase() || 'unknown',
+        iconUrl: data.fields.priority?.iconUrl || null
+      };
+
+      // Cache the result
+      this.priorityCache.set(issueKey, priorityData);
+      return priorityData;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  extractIssueKey(item) {
+    // Extract issue key from the link href (e.g., "/browse/SC-297")
+    const link = item.querySelector('a[href*="/browse/"]');
+    if (link) {
+      const match = link.href.match(/\/browse\/([A-Z]+-\d+)/);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
+  }
+
   async loadState() {
     try {
       // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
       const stored = localStorage.getItem('jira-collapsed-sections');
       this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
     } catch (error) {
-      console.log('Error loading state:', error);
+      // Silently fail
     }
   }
 
@@ -24,7 +69,7 @@ class JiraSwimlaneCollapser {
     try {
       localStorage.setItem('jira-collapsed-sections', JSON.stringify(Array.from(this.collapsedSections)));
     } catch (error) {
-      console.log('Error saving state:', error);
+      // Silently fail
     }
   }
 
@@ -61,14 +106,15 @@ class JiraSwimlaneCollapser {
            element.querySelector('ul.css-d3qtv2');
   }
 
-  processSwimlanes() {
+  async processSwimlanes() {
     const sections = this.findStatusSections();
-    console.log('Found sections:', sections.length);
 
-    sections.forEach(section => {
+    for (const section of sections) {
+      await this.sortItemsByPriority(section);
+      this.addPriorityIcons(section);
       this.addCollapseControls(section);
       this.updateItemCount(section);
-    });
+    }
   }
 
   updateItemCount(section) {
@@ -82,12 +128,154 @@ class JiraSwimlaneCollapser {
     }
   }
 
+  async sortItemsByPriority(section) {
+    if (!section.itemsList) return;
+
+    const items = Array.from(section.itemsList.querySelectorAll('li'));
+    if (items.length === 0) return;
+
+    // Priority mapping (Jira priority order)
+    // Note: Jira instances can have custom priority names, so we map common ones
+    const priorityOrder = {
+      'highest': 1,
+      'critical': 1,
+      'blocker': 1,
+      'high': 2,
+      'major': 2,
+      'medium': 3,
+      'normal': 3,
+      'low': 4,
+      'minor': 4,
+      'lowest': 5,
+      'trivial': 5
+    };
+
+    // Fetch priorities for all items
+    const itemsWithPriority = await Promise.all(items.map(async (item, index) => {
+      const issueKey = this.extractIssueKey(item);
+      let priority = 999; // Default for unknown priority
+      let priorityName = 'unknown';
+      let priorityIconUrl = null;
+
+      if (issueKey) {
+        const priorityData = await this.fetchIssuePriority(issueKey);
+        if (priorityData) {
+          priorityName = priorityData.name;
+          priority = priorityOrder[priorityName] || 999;
+          priorityIconUrl = priorityData.iconUrl;
+        }
+      }
+
+      // Store priority data on the element for later use
+      item.dataset.priorityName = priorityName;
+      item.dataset.priorityIconUrl = priorityIconUrl || '';
+      item.dataset.priority = priority;
+
+      return { item, priority, priorityName };
+    }));
+
+    // Sort by priority ascending (1 = highest priority first)
+    itemsWithPriority.sort((a, b) => a.priority - b.priority);
+
+    // Re-append items in sorted order
+    itemsWithPriority.forEach(({ item }) => {
+      section.itemsList.appendChild(item);
+    });
+  }
+
+  addPriorityIcons(section) {
+    if (!section.itemsList) return;
+
+    const items = section.itemsList.querySelectorAll('li');
+
+    items.forEach((item) => {
+      // Check if we already added the priority icon
+      if (item.querySelector('.jira-priority-icon-display')) {
+        return;
+      }
+
+      // Find the type icon (the issue type image - Task, Subtask, etc.)
+      const typeIcon = item.querySelector('img[alt]');
+      if (!typeIcon) {
+        return;
+      }
+
+      // Get priority data from dataset (set during sorting)
+      const priorityIconUrl = item.dataset.priorityIconUrl;
+      const priorityName = item.dataset.priorityName;
+
+      if (!priorityIconUrl || priorityIconUrl === '') {
+        return;
+      }
+
+      // Create the priority icon
+      const priorityIcon = document.createElement('img');
+      priorityIcon.src = priorityIconUrl;
+      priorityIcon.alt = `Priority: ${priorityName}`;
+      priorityIcon.title = `Priority: ${priorityName}`;
+      priorityIcon.classList.add('jira-priority-icon-display');
+
+      // Copy styling from type icon to match size
+      const typeIconStyles = window.getComputedStyle(typeIcon);
+      priorityIcon.style.width = typeIconStyles.width;
+      priorityIcon.style.height = typeIconStyles.height;
+      priorityIcon.style.marginRight = '4px';
+      priorityIcon.style.verticalAlign = 'middle';
+      priorityIcon.style.display = 'inline-block';
+      priorityIcon.style.flexShrink = '0'; // Prevent icon from shrinking
+
+      // Ensure the parent container displays children inline
+      const parentDiv = typeIcon.parentNode;
+      parentDiv.style.setProperty('display', 'flex', 'important');
+      parentDiv.style.setProperty('align-items', 'center', 'important');
+      parentDiv.style.setProperty('gap', '4px', 'important');
+      parentDiv.style.setProperty('flex-shrink', '0', 'important');
+      parentDiv.style.setProperty('margin-right', '32px', 'important'); // Add space after icon container
+
+      // Make type icon not shrink
+      typeIcon.style.flexShrink = '0';
+
+      // Adjust the main link container
+      const linkElement = item.querySelector('a');
+      if (linkElement) {
+        linkElement.style.setProperty('display', 'flex', 'important');
+        linkElement.style.setProperty('align-items', 'center', 'important');
+        linkElement.style.setProperty('flex-wrap', 'nowrap', 'important');
+      }
+
+      // Ensure text span can grow and handle overflow properly
+      const textSpan = item.querySelector('span._16jlouyt');
+      if (textSpan) {
+        textSpan.style.setProperty('flex', '1 1 auto', 'important');
+        textSpan.style.setProperty('min-width', '0', 'important');
+        textSpan.style.setProperty('overflow', 'hidden', 'important');
+
+        // Make sure the h4 inside can also shrink
+        const h4 = textSpan.querySelector('h4');
+        if (h4) {
+          h4.style.setProperty('overflow', 'hidden', 'important');
+          h4.style.setProperty('text-overflow', 'ellipsis', 'important');
+          h4.style.setProperty('white-space', 'nowrap', 'important');
+          h4.style.setProperty('display', 'block', 'important');
+        }
+      }
+
+      // Ensure status badge doesn't shrink
+      const statusSpan = item.querySelector('span.bu4bgh-2');
+      if (statusSpan) {
+        statusSpan.style.flexShrink = '0';
+      }
+
+      // Insert BEFORE the type icon
+      parentDiv.insertBefore(priorityIcon, typeIcon);
+    });
+  }
+
   findStatusSections() {
     const sections = [];
 
     const mainContainer = document.querySelector('[data-testid="global-pages.home.common.ui.item-list.list"]');
     if (!mainContainer) {
-      console.log('Main container not found');
       return sections;
     }
 

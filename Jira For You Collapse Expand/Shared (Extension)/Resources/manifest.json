@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Jira For You Swimlane Collapse / Expand",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Collapse and expand sections on Jira for-you page based on swimlane statuses",
   "permissions": [
     "*://*.atlassian.net/*",
