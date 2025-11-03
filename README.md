@@ -12,6 +12,8 @@ A lightweight, cross-browser extension that enhances Jira's "for-you" page by ad
 - **🎨 Clean Design**: Minimal UI that blends seamlessly with Jira's interface
 - **⚡ Real-time Updates**: Automatically handles dynamic content changes
 
+![screenshot](assets/images/screenshot.png)
+
 ## 🚀 Quick Start (Developer Mode)
 
 > **Note**: These instructions are for development/testing. Production installations require browser store approval or additional security settings.
