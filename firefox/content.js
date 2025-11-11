@@ -2,13 +2,90 @@ class JiraSwimlaneCollapser {
   constructor() {
     this.collapsedSections = new Set();
     this.priorityCache = new Map(); // Cache for priority data
+    this.isActive = false; // Track if we're on the assigned tab
     this.init();
   }
 
   async init() {
+    // Wait for tab to be available, then check if we're on "Assigned to me" tab
+    await this.waitForTab();
+    
+    if (!this.isAssignedToMeTab()) {
+      return;
+    }
+    
     await this.loadState();
     this.observePageChanges();
+    this.observeTabChanges(); // Watch for tab switches
     setTimeout(() => this.processSwimlanes(), 500);
+  }
+  
+  async waitForTab() {
+    // Wait up to 5 seconds for the tab element to appear
+    for (let i = 0; i < 50; i++) {
+      const tab = document.getElementById('your-work-page-tabs-2');
+      if (tab) {
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  isAssignedToMeTab() {
+    // Check if we're on the "Assigned to me" tab using the specific ID
+    const assignedTab = document.getElementById('your-work-page-tabs-2');
+    if (assignedTab) {
+      // Check if this tab is active/selected
+      const isSelected = assignedTab.getAttribute('aria-selected') === 'true';
+      return isSelected;
+    }
+    
+    // Fallback: check by data-testid
+    const assignedTabByTestId = document.querySelector('[data-testid="global-pages.home.ui.tab-container.navigation.item.assigned"]');
+    if (assignedTabByTestId) {
+      return assignedTabByTestId.getAttribute('aria-selected') === 'true';
+    }
+    
+    return false;
+  }
+  
+  observeTabChanges() {
+    // Watch for tab changes and re-check
+    const observer = new MutationObserver(() => {
+      const wasActive = this.isActive;
+      const isActive = this.isAssignedToMeTab();
+      
+      if (!wasActive && isActive) {
+        // Tab just became active, initialize
+        this.isActive = true;
+        setTimeout(() => this.processSwimlanes(), 200);
+      } else if (wasActive && !isActive) {
+        // Tab just became inactive, stop processing
+        this.isActive = false;
+      }
+    });
+    
+    // Observe the tab element for attribute changes
+    const assignedTab = document.getElementById('your-work-page-tabs-2');
+    if (assignedTab) {
+      observer.observe(assignedTab, {
+        attributes: true,
+        attributeFilter: ['aria-selected']
+      });
+    }
+    
+    // Also observe the tablist for any changes
+    const tablist = document.querySelector('[role="tablist"]');
+    if (tablist) {
+      observer.observe(tablist, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['aria-selected']
+      });
+    }
+    
+    this.isActive = this.isAssignedToMeTab();
   }
 
   async fetchIssuePriority(issueKey) {
@@ -78,6 +155,11 @@ class JiraSwimlaneCollapser {
 
   observePageChanges() {
     const observer = new MutationObserver((mutations) => {
+      // Only process if we're on the "Assigned to me" tab
+      if (!this.isAssignedToMeTab()) {
+        return;
+      }
+      
       let shouldProcess = false;
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length > 0) {
@@ -98,6 +180,17 @@ class JiraSwimlaneCollapser {
       childList: true,
       subtree: true
     });
+    
+    // Also check periodically in case tab changes aren't detected
+    setInterval(() => {
+      const isActive = this.isAssignedToMeTab();
+      if (isActive !== this.isActive) {
+        this.isActive = isActive;
+        if (isActive) {
+          setTimeout(() => this.processSwimlanes(), 200);
+        }
+      }
+    }, 1000);
   }
 
   containsJiraContent(element) {
@@ -110,6 +203,11 @@ class JiraSwimlaneCollapser {
   }
 
   async processSwimlanes() {
+    // Only process if we're on the "Assigned to me" tab
+    if (!this.isAssignedToMeTab()) {
+      return;
+    }
+    
     const sections = this.findStatusSections();
 
     for (const section of sections) {
