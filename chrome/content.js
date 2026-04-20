@@ -318,21 +318,43 @@ class JiraSwimlaneCollapser {
       const typeIconStyles = window.getComputedStyle(typeIcon);
       priorityIcon.style.width = typeIconStyles.width;
       priorityIcon.style.height = typeIconStyles.height;
-      priorityIcon.style.marginRight = '4px';
+      priorityIcon.style.setProperty('margin-inline-end', '12px', 'important');
+      priorityIcon.style.setProperty('margin-right', '12px', 'important');
       priorityIcon.style.verticalAlign = 'middle';
-      priorityIcon.style.display = 'inline-block';
-      priorityIcon.style.flexShrink = '0'; // Prevent icon from shrinking
+      priorityIcon.style.setProperty('display', 'inline-block', 'important');
+      priorityIcon.style.setProperty('flex-shrink', '0', 'important');
 
-      // Ensure the parent container displays children inline
       const parentDiv = typeIcon.parentNode;
+      parentDiv.classList.add('jira-issue-icons-cluster');
       parentDiv.style.setProperty('display', 'flex', 'important');
+      parentDiv.style.setProperty('flex-direction', 'row', 'important');
       parentDiv.style.setProperty('align-items', 'center', 'important');
-      parentDiv.style.setProperty('gap', '4px', 'important');
+      parentDiv.style.setProperty('justify-content', 'flex-start', 'important');
+      parentDiv.style.setProperty('gap', '12px', 'important');
+      parentDiv.style.setProperty('column-gap', '12px', 'important');
+      parentDiv.style.setProperty('padding', '2px 8px', 'important');
+      parentDiv.style.setProperty('box-sizing', 'border-box', 'important');
+      parentDiv.style.setProperty('width', 'max-content', 'important');
+      parentDiv.style.setProperty('max-width', 'none', 'important');
+      parentDiv.style.setProperty('min-width', 'max-content', 'important');
+      parentDiv.style.setProperty('overflow', 'visible', 'important');
+      parentDiv.style.setProperty('overflow-x', 'visible', 'important');
+      parentDiv.style.setProperty('flex', '0 0 auto', 'important');
       parentDiv.style.setProperty('flex-shrink', '0', 'important');
       parentDiv.style.setProperty('margin-right', '32px', 'important'); // Add space after icon container
 
+      let ancestor = parentDiv.parentElement;
+      for (let d = 0; d < 2 && ancestor && ancestor !== item; d++) {
+        if (ancestor.nodeType === Node.ELEMENT_NODE) {
+          ancestor.style.setProperty('overflow', 'visible', 'important');
+          ancestor.style.setProperty('overflow-x', 'visible', 'important');
+          ancestor.style.setProperty('max-width', 'none', 'important');
+        }
+        ancestor = ancestor.parentElement;
+      }
+
       // Make type icon not shrink
-      typeIcon.style.flexShrink = '0';
+      typeIcon.style.setProperty('flex-shrink', '0', 'important');
 
       // Adjust the main link container
       const linkElement = item.querySelector('a');

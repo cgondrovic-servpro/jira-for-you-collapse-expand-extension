@@ -99,6 +99,24 @@
   opacity: 0.6;
 }
 
+img.jira-priority-icon-display {
+  margin-inline-end: 12px !important;
+  margin-right: 12px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+}
+
+.jira-issue-icons-cluster {
+  width: max-content !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
 /* Override Jira's webkit-box display that truncates content */
 [data-testid*="global-pages.home"] ._1e0ccj1k {
   display: block !important;
