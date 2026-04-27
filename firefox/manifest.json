@@ -23,7 +23,13 @@
   ],
   "content_scripts": [
     {
-      "matches": ["*://*.atlassian.net/jira/for-you*", "*://*.jira.com/jira/for-you*", "*://jira-servpro.atlassian.net/*"],
+      "matches": [
+        "*://*.atlassian.net/jira/for-you*",
+        "*://*.atlassian.net/jira/your-work*",
+        "*://*.jira.com/jira/for-you*",
+        "*://*.jira.com/jira/your-work*",
+        "*://jira-servpro.atlassian.net/*"
+      ],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_end"

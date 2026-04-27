@@ -95,10 +95,12 @@
   opacity: 0.7;
 }
 
-.jira-collapsed h3 {
+.jira-collapsed h3,
+.jira-collapsed .jira-for-you-section-label {
   opacity: 0.6;
 }
 
+/* Injected priority icon: margin survives when Jira overrides flex gap */
 img.jira-priority-icon-display {
   margin-inline-end: 12px !important;
   margin-right: 12px !important;
@@ -106,6 +108,7 @@ img.jira-priority-icon-display {
   display: inline-block !important;
 }
 
+/* Wrapper for priority + issue-type icons: Jira sizes pill for one icon; widen so nothing clips */
 .jira-issue-icons-cluster {
   width: max-content !important;
   max-width: none !important;
@@ -117,10 +120,11 @@ img.jira-priority-icon-display {
   box-sizing: border-box !important;
 }
 
-/* Override Jira's webkit-box display that truncates content */
-[data-testid*="global-pages.home"] ._1e0ccj1k {
+/* Title line: avoid Jira line-clamp fighting our flex row (class set in content.js) */
+.jira-for-you-item-title {
   display: block !important;
   -webkit-line-clamp: unset !important;
+  line-clamp: unset !important;
   -webkit-box-orient: unset !important;
   overflow: visible !important;
 }

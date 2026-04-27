@@ -95,7 +95,8 @@
   opacity: 0.7;
 }
 
-.jira-collapsed h3 {
+.jira-collapsed h3,
+.jira-collapsed .jira-for-you-section-label {
   opacity: 0.6;
 }
 
@@ -119,8 +120,8 @@ img.jira-priority-icon-display {
   box-sizing: border-box !important;
 }
 
-/* Override Jira's webkit-box display that truncates content */
-[data-testid*="global-pages.home"] ._1e0ccj1k {
+/* Title line: avoid Jira line-clamp fighting our flex row (class set in content.js) */
+.jira-for-you-item-title {
   display: block !important;
   -webkit-line-clamp: unset !important;
   line-clamp: unset !important;

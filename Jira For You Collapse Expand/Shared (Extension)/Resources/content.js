@@ -7,89 +7,107 @@ class JiraSwimlaneCollapser {
   }
 
   async init() {
-    // Wait for tab to be available, then check if we're on "Assigned to me" tab
     await this.waitForTab();
-    
-    if (!this.isAssignedToMeTab()) {
-      return;
-    }
-    
     await this.loadState();
     this.observePageChanges();
-    this.observeTabChanges(); // Watch for tab switches
-    setTimeout(() => this.processSwimlanes(), 500);
+    this.observeTabChanges();
+    if (this.isAssignedToMeTab()) {
+      this.scheduleProcessSwimlanesRetries();
+    }
   }
-  
+
+  /** Initial paint is often after document_end; retry a few times if lists are not mounted yet. */
+  scheduleProcessSwimlanesRetries() {
+    const delays = [0, 400, 1200, 3000];
+    delays.forEach((ms) => {
+      setTimeout(() => {
+        if (this.isAssignedToMeTab()) {
+          this.processSwimlanes();
+        }
+      }, ms);
+    });
+  }
+
+  /**
+   * The element that carries aria-selected for "Assigned to me". In current Jira the
+   * data-testid lives on a div *inside* the tab button, so we must use closest('[role="tab"]').
+   */
+  getAssignedTabButton() {
+    const byAria = document.querySelector(
+      'button[aria-controls="assigned-tab-panel"][role="tab"]'
+    );
+    if (byAria) {
+      return byAria;
+    }
+    const byAriaLoose = document.querySelector('button[aria-controls="assigned-tab-panel"]');
+    if (byAriaLoose) {
+      return byAriaLoose;
+    }
+    const legacy = document.getElementById('your-work-page-tabs-2');
+    if (legacy) {
+      return legacy;
+    }
+    const label = document.querySelector(
+      '[data-testid="global-pages.home.ui.tab-container.navigation.item.assigned"]'
+    );
+    if (label) {
+      return label.closest('[role="tab"]') || label.closest('button');
+    }
+    return null;
+  }
+
   async waitForTab() {
-    // Wait up to 5 seconds for the tab element to appear
     for (let i = 0; i < 50; i++) {
-      const tab = document.getElementById('your-work-page-tabs-2');
-      if (tab) {
+      if (this.getAssignedTabButton() || document.getElementById('assigned-tab-panel')) {
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-  
+
   isAssignedToMeTab() {
-    // Check if we're on the "Assigned to me" tab using the specific ID
-    const assignedTab = document.getElementById('your-work-page-tabs-2');
-    if (assignedTab) {
-      // Check if this tab is active/selected
-      const isSelected = assignedTab.getAttribute('aria-selected') === 'true';
-      return isSelected;
+    const tab = this.getAssignedTabButton();
+    if (!tab) {
+      return false;
     }
-    
-    // Fallback: check by data-testid
-    const assignedTabByTestId = document.querySelector('[data-testid="global-pages.home.ui.tab-container.navigation.item.assigned"]');
-    if (assignedTabByTestId) {
-      return assignedTabByTestId.getAttribute('aria-selected') === 'true';
-    }
-    
-    return false;
+    return tab.getAttribute('aria-selected') === 'true';
   }
-  
+
   observeTabChanges() {
-    // Watch for tab changes and re-check
     const observer = new MutationObserver(() => {
       const wasActive = this.isActive;
       const isActive = this.isAssignedToMeTab();
-      
+
       if (!wasActive && isActive) {
-        // Tab just became active, initialize
         this.isActive = true;
         setTimeout(() => this.processSwimlanes(), 200);
       } else if (wasActive && !isActive) {
-        // Tab just became inactive, stop processing
         this.isActive = false;
       }
     });
-    
-    // Observe the tab element for attribute changes
-    const assignedTab = document.getElementById('your-work-page-tabs-2');
+
+    const assignedTab = this.getAssignedTabButton();
     if (assignedTab) {
       observer.observe(assignedTab, {
         attributes: true,
-        attributeFilter: ['aria-selected']
+        attributeFilter: ['aria-selected'],
       });
     }
-    
-    // Also observe the tablist for any changes
+
     const tablist = document.querySelector('[role="tablist"]');
     if (tablist) {
       observer.observe(tablist, {
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['aria-selected']
+        attributeFilter: ['aria-selected'],
       });
     }
-    
+
     this.isActive = this.isAssignedToMeTab();
   }
 
   async fetchIssuePriority(issueKey) {
-    // Check cache first
     if (this.priorityCache.has(issueKey)) {
       return this.priorityCache.get(issueKey);
     }
@@ -98,8 +116,8 @@ class JiraSwimlaneCollapser {
       const response = await fetch(`/rest/api/3/issue/${issueKey}?fields=priority`, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json'
-        }
+          Accept: 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -109,10 +127,9 @@ class JiraSwimlaneCollapser {
       const data = await response.json();
       const priorityData = {
         name: data.fields.priority?.name?.toLowerCase() || 'unknown',
-        iconUrl: data.fields.priority?.iconUrl || null
+        iconUrl: data.fields.priority?.iconUrl || null,
       };
 
-      // Cache the result
       this.priorityCache.set(issueKey, priorityData);
       return priorityData;
     } catch (error) {
@@ -121,8 +138,9 @@ class JiraSwimlaneCollapser {
   }
 
   extractIssueKey(item) {
-    // Extract issue key from the link href (e.g., "/browse/SC-297")
-    const link = item.querySelector('a[href*="/browse/"]');
+    const link =
+      item.querySelector('a[href*="/browse/"]:not([aria-hidden="true"])') ||
+      item.querySelector('a[href*="/browse/"]');
     if (link) {
       const match = link.href.match(/\/browse\/([A-Z]+-\d+)/);
       if (match) {
@@ -134,7 +152,6 @@ class JiraSwimlaneCollapser {
 
   async loadState() {
     try {
-      // Safari uses localStorage as fallback since it doesn't support extension storage in the same way
       const stored = localStorage.getItem('jira-collapsed-sections');
       this.collapsedSections = new Set(stored ? JSON.parse(stored) : []);
     } catch (error) {
@@ -152,11 +169,10 @@ class JiraSwimlaneCollapser {
 
   observePageChanges() {
     const observer = new MutationObserver((mutations) => {
-      // Only process if we're on the "Assigned to me" tab
       if (!this.isAssignedToMeTab()) {
         return;
       }
-      
+
       let shouldProcess = false;
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length > 0) {
@@ -175,10 +191,9 @@ class JiraSwimlaneCollapser {
 
     observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
     });
-    
-    // Also check periodically in case tab changes aren't detected
+
     setInterval(() => {
       const isActive = this.isAssignedToMeTab();
       if (isActive !== this.isActive) {
@@ -193,18 +208,21 @@ class JiraSwimlaneCollapser {
   containsJiraContent(element) {
     if (!element.querySelector) return false;
 
-    return element.matches('[data-testid*="global-pages.home"]') ||
-           element.querySelector('[data-testid*="global-pages.home"]') ||
-           element.querySelector('h3 span') ||
-           element.querySelector('ul.css-d3qtv2');
+    return (
+      element.matches('[data-testid*="global-pages.home"]') ||
+      element.querySelector('[data-testid*="global-pages.home"]') ||
+      element.querySelector('h3 span') ||
+      element.querySelector('ul.css-d3qtv2') ||
+      element.matches('ul[data-testid="home-list-ui"]') ||
+      element.querySelector('ul[data-testid="home-list-ui"]')
+    );
   }
 
   async processSwimlanes() {
-    // Only process if we're on the "Assigned to me" tab
     if (!this.isAssignedToMeTab()) {
       return;
     }
-    
+
     const sections = this.findStatusSections();
 
     for (const section of sections) {
@@ -232,53 +250,123 @@ class JiraSwimlaneCollapser {
     const items = Array.from(section.itemsList.querySelectorAll('li'));
     if (items.length === 0) return;
 
-    // Priority mapping (Jira priority order)
-    // Note: Jira instances can have custom priority names, so we map common ones
     const priorityOrder = {
-      'highest': 1,
-      'critical': 1,
-      'blocker': 1,
-      'high': 2,
-      'major': 2,
-      'medium': 3,
-      'normal': 3,
-      'low': 4,
-      'minor': 4,
-      'lowest': 5,
-      'trivial': 5
+      highest: 1,
+      critical: 1,
+      blocker: 1,
+      high: 2,
+      major: 2,
+      medium: 3,
+      normal: 3,
+      low: 4,
+      minor: 4,
+      lowest: 5,
+      trivial: 5,
     };
 
-    // Fetch priorities for all items
-    const itemsWithPriority = await Promise.all(items.map(async (item, index) => {
-      const issueKey = this.extractIssueKey(item);
-      let priority = 999; // Default for unknown priority
-      let priorityName = 'unknown';
-      let priorityIconUrl = null;
+    const itemsWithPriority = await Promise.all(
+      items.map(async (item) => {
+        const issueKey = this.extractIssueKey(item);
+        let priority = 999;
+        let priorityName = 'unknown';
+        let priorityIconUrl = null;
 
-      if (issueKey) {
-        const priorityData = await this.fetchIssuePriority(issueKey);
-        if (priorityData) {
-          priorityName = priorityData.name;
-          priority = priorityOrder[priorityName] || 999;
-          priorityIconUrl = priorityData.iconUrl;
+        if (issueKey) {
+          const priorityData = await this.fetchIssuePriority(issueKey);
+          if (priorityData) {
+            priorityName = priorityData.name;
+            priority = priorityOrder[priorityName] || 999;
+            priorityIconUrl = priorityData.iconUrl;
+          }
         }
-      }
 
-      // Store priority data on the element for later use
-      item.dataset.priorityName = priorityName;
-      item.dataset.priorityIconUrl = priorityIconUrl || '';
-      item.dataset.priority = priority;
+        item.dataset.priorityName = priorityName;
+        item.dataset.priorityIconUrl = priorityIconUrl || '';
+        item.dataset.priority = priority;
 
-      return { item, priority, priorityName };
-    }));
+        return { item, priority, priorityName };
+      })
+    );
 
-    // Sort by priority ascending (1 = highest priority first)
     itemsWithPriority.sort((a, b) => a.priority - b.priority);
 
-    // Re-append items in sorted order
     itemsWithPriority.forEach(({ item }) => {
       section.itemsList.appendChild(item);
     });
+  }
+
+  getMainListContainer() {
+    const sel = '[data-testid="global-pages.home.common.ui.item-list.list"]';
+    let el = document.querySelector(sel);
+    if (el) {
+      return el;
+    }
+    const panel = document.getElementById('assigned-tab-panel');
+    if (panel) {
+      el = panel.querySelector(sel);
+      if (el) {
+        return el;
+      }
+      el = panel.querySelector('[data-testid*="item-list.list"]');
+      if (el) {
+        return el;
+      }
+    }
+    return null;
+  }
+
+  getSectionStatusText(headerDiv) {
+    const h3span = headerDiv.querySelector('h3 span');
+    if (h3span) {
+      return h3span.textContent.trim();
+    }
+    for (const child of headerDiv.children) {
+      if (child.classList?.contains('jira-collapse-control')) {
+        continue;
+      }
+      if (child.tagName === 'H3') {
+        const s = child.querySelector('span');
+        if (s) return s.textContent.trim();
+      }
+      if (child.tagName === 'SPAN') {
+        const t = child.textContent.trim();
+        if (t) return t;
+      }
+    }
+    const sp = headerDiv.querySelector('span');
+    return sp ? sp.textContent.trim() : '';
+  }
+
+  getSectionTitleLabelElement(headerDiv) {
+    const h3 = headerDiv.querySelector('h3');
+    if (h3) {
+      return h3.querySelector('span') || h3;
+    }
+    for (const child of headerDiv.children) {
+      if (child.classList?.contains('jira-collapse-control')) {
+        continue;
+      }
+      if (child.tagName === 'SPAN') {
+        return child;
+      }
+    }
+    return null;
+  }
+
+  findItemsListFromHeader(headerDiv, mainContainer) {
+    if (!mainContainer || !headerDiv || !mainContainer.contains(headerDiv)) {
+      return null;
+    }
+    const next = headerDiv.nextElementSibling;
+    if (!next) {
+      return null;
+    }
+    if (next.tagName === 'UL') {
+      return next;
+    }
+    return (
+      next.querySelector('ul[data-testid="home-list-ui"]') || next.querySelector('ul')
+    );
   }
 
   addPriorityIcons(section) {
@@ -287,18 +375,15 @@ class JiraSwimlaneCollapser {
     const items = section.itemsList.querySelectorAll('li');
 
     items.forEach((item) => {
-      // Check if we already added the priority icon
       if (item.querySelector('.jira-priority-icon-display')) {
         return;
       }
 
-      // Find the type icon (the issue type image - Task, Subtask, etc.)
       const typeIcon = item.querySelector('img[alt]');
       if (!typeIcon) {
         return;
       }
 
-      // Get priority data from dataset (set during sorting)
       const priorityIconUrl = item.dataset.priorityIconUrl;
       const priorityName = item.dataset.priorityName;
 
@@ -306,14 +391,12 @@ class JiraSwimlaneCollapser {
         return;
       }
 
-      // Create the priority icon
       const priorityIcon = document.createElement('img');
       priorityIcon.src = priorityIconUrl;
       priorityIcon.alt = `Priority: ${priorityName}`;
       priorityIcon.title = `Priority: ${priorityName}`;
       priorityIcon.classList.add('jira-priority-icon-display');
 
-      // Copy styling from type icon to match size
       const typeIconStyles = window.getComputedStyle(typeIcon);
       priorityIcon.style.width = typeIconStyles.width;
       priorityIcon.style.height = typeIconStyles.height;
@@ -340,7 +423,7 @@ class JiraSwimlaneCollapser {
       parentDiv.style.setProperty('overflow-x', 'visible', 'important');
       parentDiv.style.setProperty('flex', '0 0 auto', 'important');
       parentDiv.style.setProperty('flex-shrink', '0', 'important');
-      parentDiv.style.setProperty('margin-right', '32px', 'important'); // Add space after icon container
+      parentDiv.style.setProperty('margin-right', '32px', 'important');
 
       let ancestor = parentDiv.parentElement;
       for (let d = 0; d < 2 && ancestor && ancestor !== item; d++) {
@@ -352,100 +435,116 @@ class JiraSwimlaneCollapser {
         ancestor = ancestor.parentElement;
       }
 
-      // Make type icon not shrink
       typeIcon.style.setProperty('flex-shrink', '0', 'important');
 
-      // Adjust the main link container
-      const linkElement = item.querySelector('a');
-      if (linkElement) {
-        linkElement.style.setProperty('display', 'flex', 'important');
-        linkElement.style.setProperty('align-items', 'center', 'important');
-        linkElement.style.setProperty('flex-wrap', 'nowrap', 'important');
-      }
-
-      // Ensure text span can grow and handle overflow properly
-      const textSpan = item.querySelector('span._16jlouyt');
-      if (textSpan) {
-        textSpan.style.setProperty('flex', '1 1 auto', 'important');
-        textSpan.style.setProperty('min-width', '0', 'important');
-        textSpan.style.setProperty('overflow', 'hidden', 'important');
-
-        // Make sure the h4 inside can also shrink
-        const h4 = textSpan.querySelector('h4');
-        if (h4) {
-          h4.style.setProperty('overflow', 'hidden', 'important');
-          h4.style.setProperty('text-overflow', 'ellipsis', 'important');
-          h4.style.setProperty('white-space', 'nowrap', 'important');
-          h4.style.setProperty('display', 'block', 'important');
+      const mainLink =
+        item.querySelector('a[href*="/browse/"]:not([aria-hidden="true"])') ||
+        item.querySelector('a[href*="/browse/"]');
+      if (mainLink) {
+        const linkCol = mainLink.parentElement;
+        if (linkCol) {
+          linkCol.style.setProperty('flex', '1 1 auto', 'important');
+          linkCol.style.setProperty('min-width', '0', 'important');
         }
+        const titleInner = mainLink.querySelector('span') || mainLink;
+        titleInner.classList.add('jira-for-you-item-title');
+        titleInner.style.setProperty('overflow', 'hidden', 'important');
+        titleInner.style.setProperty('text-overflow', 'ellipsis', 'important');
+        titleInner.style.setProperty('white-space', 'nowrap', 'important');
+        titleInner.style.setProperty('display', 'block', 'important');
       }
 
-      // Ensure status badge doesn't shrink
-      const statusSpan = item.querySelector('span.bu4bgh-2');
-      if (statusSpan) {
-        statusSpan.style.flexShrink = '0';
+      const rowCols = item.querySelectorAll(':scope > div');
+      if (rowCols.length) {
+        rowCols[rowCols.length - 1].style.setProperty('flex-shrink', '0', 'important');
       }
 
-      // Insert BEFORE the type icon
       parentDiv.insertBefore(priorityIcon, typeIcon);
     });
   }
 
   findStatusSections() {
-    const sections = [];
-
-    const mainContainer = document.querySelector('[data-testid="global-pages.home.common.ui.item-list.list"]');
+    const mainContainer = this.getMainListContainer();
     if (!mainContainer) {
-      return sections;
+      return [];
     }
 
-    const headerDivs = mainContainer.querySelectorAll('div:has(> h3)');
-    headerDivs.forEach(headerDiv => {
-      const h3 = headerDiv.querySelector('h3 span');
-      if (h3) {
-        const statusText = h3.textContent.trim();
-        const nextElement = headerDiv.nextElementSibling;
+    const byList = new Map();
 
-        if (nextElement && nextElement.tagName === 'UL') {
-          sections.push({
-            headerDiv,
-            statusText,
-            itemsList: nextElement,
-            h3
-          });
-        }
+    const addSection = (headerDiv, itemsList, statusText) => {
+      if (!headerDiv || !itemsList || !statusText) {
+        return;
+      }
+      if (byList.has(itemsList)) {
+        return;
+      }
+      byList.set(itemsList, { headerDiv, statusText, itemsList });
+    };
+
+    mainContainer.querySelectorAll('ul[data-testid="home-list-ui"]').forEach((ul) => {
+      let el = ul;
+      while (el && el.parentElement && el.parentElement !== mainContainer) {
+        el = el.parentElement;
+      }
+      if (!el || el.parentElement !== mainContainer) {
+        return;
+      }
+      const headerDiv = el.previousElementSibling;
+      if (!headerDiv) {
+        return;
+      }
+      const statusText = this.getSectionStatusText(headerDiv);
+      if (statusText) {
+        addSection(headerDiv, ul, statusText);
       }
     });
 
-    if (sections.length === 0) {
-      const allH3s = mainContainer.querySelectorAll('h3');
-      allH3s.forEach(h3 => {
-        const span = h3.querySelector('span');
-        if (span) {
-          const statusText = span.textContent.trim();
-          let nextElement = h3.parentElement.nextElementSibling;
-
-          while (nextElement && nextElement.tagName !== 'UL') {
-            nextElement = nextElement.nextElementSibling;
-          }
-
+    if (byList.size === 0) {
+      const headerDivs = mainContainer.querySelectorAll('div:has(> h3)');
+      headerDivs.forEach((headerDiv) => {
+        const h3 = headerDiv.querySelector('h3 span');
+        if (h3) {
+          const statusText = h3.textContent.trim();
+          const nextElement = headerDiv.nextElementSibling;
           if (nextElement && nextElement.tagName === 'UL') {
-            sections.push({
-              headerDiv: h3.parentElement,
-              statusText,
-              itemsList: nextElement,
-              h3
-            });
+            addSection(headerDiv, nextElement, statusText);
           }
         }
       });
     }
 
-    return sections;
+    if (byList.size === 0) {
+      mainContainer.querySelectorAll('h3').forEach((h3) => {
+        const span = h3.querySelector('span');
+        if (span) {
+          const statusText = span.textContent.trim();
+          let nextElement = h3.parentElement.nextElementSibling;
+          while (nextElement && nextElement.tagName !== 'UL') {
+            nextElement = nextElement.nextElementSibling;
+          }
+          if (nextElement && nextElement.tagName === 'UL') {
+            addSection(h3.parentElement, nextElement, statusText);
+          }
+        }
+      });
+    }
+
+    return Array.from(byList.values());
   }
 
   addCollapseControls(section) {
-    if (section.headerDiv.querySelector('.jira-collapse-control')) return;
+    if (section.headerDiv.querySelector('.jira-collapse-control')) {
+      return;
+    }
+
+    const headerDiv = section.headerDiv;
+    if (!headerDiv.classList.contains('jira-section-header')) {
+      headerDiv.classList.add('jira-section-header');
+    }
+    const labelEl = this.getSectionTitleLabelElement(headerDiv);
+    if (labelEl) {
+      labelEl.classList.add('jira-for-you-section-label');
+    }
 
     const sectionId = this.generateSectionId(section.statusText);
     const isCollapsed = this.collapsedSections.has(sectionId);
@@ -453,7 +552,7 @@ class JiraSwimlaneCollapser {
 
     const control = this.createCollapseControl(sectionId, section.statusText, isCollapsed, itemCount);
 
-    section.headerDiv.insertBefore(control, section.headerDiv.firstChild);
+    headerDiv.insertBefore(control, headerDiv.firstChild);
 
     this.applyCollapseState(section, isCollapsed);
   }
@@ -513,26 +612,24 @@ class JiraSwimlaneCollapser {
 
   findSectionForControl(control) {
     const headerDiv = control.parentElement;
-    const h3 = headerDiv.querySelector('h3 span');
-    if (!h3) return null;
+    if (!headerDiv) return null;
 
-    const statusText = h3.textContent.trim();
-    let nextElement = headerDiv.nextElementSibling;
+    const mainContainer = this.getMainListContainer();
+    if (!mainContainer) return null;
 
-    while (nextElement && nextElement.tagName !== 'UL') {
-      nextElement = nextElement.nextElementSibling;
+    const statusText = this.getSectionStatusText(headerDiv);
+    if (!statusText) return null;
+
+    const itemsList = this.findItemsListFromHeader(headerDiv, mainContainer);
+    if (!itemsList) {
+      return null;
     }
 
-    if (nextElement && nextElement.tagName === 'UL') {
-      return {
-        headerDiv,
-        statusText,
-        itemsList: nextElement,
-        h3
-      };
-    }
-
-    return null;
+    return {
+      headerDiv,
+      statusText,
+      itemsList,
+    };
   }
 
   applyCollapseState(section, isCollapsed) {
