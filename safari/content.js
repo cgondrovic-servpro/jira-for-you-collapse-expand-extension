@@ -234,14 +234,10 @@ class JiraSwimlaneCollapser {
   }
 
   updateItemCount(section) {
-    const control = section.headerDiv.querySelector('.jira-collapse-control');
-    if (!control) return;
-
-    const countSpan = control.querySelector('.jira-collapse-count');
-    if (countSpan) {
-      const itemCount = this.getItemCount(section);
-      countSpan.textContent = `(${itemCount})`;
-    }
+    const countSpan = section.headerDiv.querySelector('.jira-collapse-count');
+    if (!countSpan) return;
+    const itemCount = this.getItemCount(section);
+    countSpan.textContent = `(${itemCount})`;
   }
 
   async sortItemsByPriority(section) {
@@ -316,7 +312,7 @@ class JiraSwimlaneCollapser {
   }
 
   getSectionStatusText(headerDiv) {
-    const h3span = headerDiv.querySelector('h3 span');
+    const h3span = headerDiv.querySelector('h3 span:not(.jira-for-you-collapse-toggle)');
     if (h3span) {
       return h3span.textContent.trim();
     }
@@ -325,7 +321,7 @@ class JiraSwimlaneCollapser {
         continue;
       }
       if (child.tagName === 'H3') {
-        const s = child.querySelector('span');
+        const s = child.querySelector('span:not(.jira-for-you-collapse-toggle)');
         if (s) return s.textContent.trim();
       }
       if (child.tagName === 'SPAN') {
@@ -340,10 +336,15 @@ class JiraSwimlaneCollapser {
   getSectionTitleLabelElement(headerDiv) {
     const h3 = headerDiv.querySelector('h3');
     if (h3) {
-      return h3.querySelector('span') || h3;
+      return (
+        h3.querySelector('span:not(.jira-for-you-collapse-toggle)') || h3
+      );
     }
     for (const child of headerDiv.children) {
-      if (child.classList?.contains('jira-collapse-control')) {
+      if (
+        child.classList?.contains('jira-collapse-control') ||
+        child.classList?.contains('jira-for-you-collapse-toggle')
+      ) {
         continue;
       }
       if (child.tagName === 'SPAN') {
@@ -533,7 +534,7 @@ class JiraSwimlaneCollapser {
   }
 
   addCollapseControls(section) {
-    if (section.headerDiv.querySelector('.jira-collapse-control')) {
+    if (section.headerDiv.querySelector('.jira-for-you-collapse-toggle')) {
       return;
     }
 
@@ -542,42 +543,49 @@ class JiraSwimlaneCollapser {
       headerDiv.classList.add('jira-section-header');
     }
     const labelEl = this.getSectionTitleLabelElement(headerDiv);
-    if (labelEl) {
-      labelEl.classList.add('jira-for-you-section-label');
-    }
 
     const sectionId = this.generateSectionId(section.statusText);
     const isCollapsed = this.collapsedSections.has(sectionId);
-    const itemCount = this.getItemCount(section);
 
-    const control = this.createCollapseControl(sectionId, section.statusText, isCollapsed, itemCount);
+    const toggle = this.createInlineCollapseToggle(sectionId, isCollapsed);
 
-    headerDiv.insertBefore(control, headerDiv.firstChild);
+    if (labelEl && labelEl.parentNode) {
+      labelEl.parentNode.insertBefore(toggle, labelEl.nextSibling);
+    } else {
+      headerDiv.insertBefore(toggle, headerDiv.firstChild);
+    }
 
     this.applyCollapseState(section, isCollapsed);
   }
 
-  createCollapseControl(sectionId, statusText, isCollapsed, itemCount) {
-    const control = document.createElement('div');
-    control.className = 'jira-collapse-control';
-    control.setAttribute('data-section-id', sectionId);
+  createInlineCollapseToggle(sectionId, isCollapsed) {
+    const toggle = document.createElement('span');
+    toggle.className = 'jira-for-you-collapse-toggle';
+    toggle.setAttribute('data-section-id', sectionId);
+    toggle.setAttribute('role', 'button');
+    toggle.setAttribute('tabindex', '0');
+    toggle.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
 
-    const button = document.createElement('button');
-    button.className = 'jira-collapse-button';
-    button.innerHTML = `
-      <span class="jira-collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
-      <span class="jira-collapse-text">${isCollapsed ? 'Expand' : 'Collapse'} ${statusText}</span>
-      <span class="jira-collapse-count">(${itemCount})</span>
-    `;
+    const icon = document.createElement('span');
+    icon.className = 'jira-collapse-icon';
+    icon.textContent = isCollapsed ? '▶' : '▼';
 
-    button.addEventListener('click', (e) => {
+    toggle.appendChild(icon);
+
+    const activate = (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.toggleSection(sectionId);
+    };
+    toggle.addEventListener('click', activate);
+    toggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activate(e);
+      }
     });
 
-    control.appendChild(button);
-    return control;
+    return toggle;
   }
 
   getItemCount(section) {
@@ -611,7 +619,7 @@ class JiraSwimlaneCollapser {
   }
 
   findSectionForControl(control) {
-    const headerDiv = control.parentElement;
+    const headerDiv = control.closest('.jira-section-header');
     if (!headerDiv) return null;
 
     const mainContainer = this.getMainListContainer();
@@ -642,15 +650,11 @@ class JiraSwimlaneCollapser {
 
   updateControlAppearance(control, isCollapsed) {
     const icon = control.querySelector('.jira-collapse-icon');
-    const text = control.querySelector('.jira-collapse-text');
-
     if (icon) {
       icon.textContent = isCollapsed ? '▶' : '▼';
     }
-
-    if (text) {
-      const statusText = text.textContent.replace(/^(Expand|Collapse)\s/, '');
-      text.textContent = `${isCollapsed ? 'Expand' : 'Collapse'} ${statusText}`;
+    if (control.classList?.contains('jira-for-you-collapse-toggle')) {
+      control.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
     }
   }
 }
